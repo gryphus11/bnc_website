@@ -1,7 +1,6 @@
-// src/app/notice/[id]/page.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react'; // import는 최상단에
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Navbar from '../../components/Navbar';
@@ -26,6 +25,7 @@ export default function NoticeDetailPage() {
     if (params.id) fetchDetail();
   }, [params.id]);
 
+  if (loading) return <div className="p-10 text-center">로딩 중...</div>;
   if (!notice) return <div className="p-10 text-center">게시글을 찾을 수 없습니다.</div>;
 
   return (
@@ -39,6 +39,7 @@ export default function NoticeDetailPage() {
           <div className="flex text-sm text-gray-500 mt-4 space-x-4">
             <span>작성자: {notice.author}</span>
             <span>날짜: {notice.date}</span>
+            <span>조회수: {notice.views}</span>
           </div>
         </div>
 
@@ -47,11 +48,17 @@ export default function NoticeDetailPage() {
           {notice.content}
         </div>
 
-        {/* 이미지 리스트 (여러 장) */}
+        {/* 이미지 리스트: 본문 바로 아래에 출력 */}
         {notice.images && notice.images.length > 0 && (
-          <div className="px-6 mb-10 space-y-4">
-            {notice.images.map((img, idx) => (
-              <img key={idx} src={img} alt={`첨부이미지 ${idx+1}`} className="w-full rounded shadow-sm" />
+          <div className="px-6 mb-10 space-y-6">
+            {notice.images.map((imgUrl: string, idx: number) => (
+              <div key={idx} className="rounded-lg overflow-hidden shadow-sm border">
+                <img 
+                  src={imgUrl} 
+                  alt={`첨부이미지 ${idx + 1}`} 
+                  className="w-full h-auto object-contain" 
+                />
+              </div>
             ))}
           </div>
         )}
@@ -70,36 +77,24 @@ export default function NoticeDetailPage() {
           </div>
         )}
 
-        {/* 첨부파일/링크 섹션 */}
-        {notice.attachments && (
+        {/* 첨부파일 다운로드 섹션 */}
+        {notice.attachments && notice.attachments.length > 0 && (
           <div className="mx-6 p-4 bg-gray-100 rounded-lg">
-            <h5 className="font-bold text-sm mb-2 italic">첨부파일 다운로드</h5>
-            {notice.attachments.map((file, idx) => (
-              <a key={idx} href={file.url} className="text-blue-600 hover:underline block text-sm">
+            <h5 className="font-bold text-sm mb-2 italic text-gray-700">첨부파일 다운로드</h5>
+            {notice.attachments.map((file: any, idx: number) => (
+              <a key={idx} href={file.url} className="text-blue-600 hover:underline block text-sm py-1">
                 💾 {file.name}
               </a>
             ))}
           </div>
         )}
-        
-        {/* [이 부분 수정] 이미지 배열이 있을 경우 화면에 순서대로 출력 */}
-        {notice.images && notice.images.length > 0 && (
-          <div className="mt-10 space-y-6">
-            {notice.images.map((imgUrl: string, index: number) => (
-              <div key={index} className="rounded-lg overflow-hidden shadow-md">
-                <img
-                  src={imgUrl}
-                  alt={`첨부 이미지 ${index + 1}`}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* 하단 버튼 */}
-        <div className="mt-12 flex justify-center">
-          <button onClick={() => router.back()} className="px-8 py-2 bg-gray-800 text-white rounded">
+        <div className="mt-12 flex justify-center border-t pt-8">
+          <button 
+            onClick={() => router.back()} 
+            className="px-10 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+          >
             목록으로
           </button>
         </div>
