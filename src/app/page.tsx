@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // 1. useRouter 임포트 추가
 import { supabase } from './lib/supabase';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -8,33 +9,35 @@ import ProductCard from './components/ProductCard';
 import { MENU_DATA } from './constants/menuData';
 
 export default function Home() {
+  const router = useRouter(); // 2. router 객체 선언
   const [currentCategory, setCurrentCategory] = useState("제품소개");
   const [currentSub, setCurrentSub] = useState("Airfoil Group");
-  const [products, setProducts] = useState<any[]>([]); // DB에서 가져온 제품들
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 메뉴 클릭 시 데이터 가져오기
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('notices')
-        .select('*')
-        .eq('category', currentSub) // 현재 선택된 서브메뉴(그룹명)와 일치하는 것만
-        .order('id', { ascending: false });
+      
+      // 쿼리 시작
+      let query = supabase.from('notices').select('*');
+
+      // [핵심 수정] 현재 선택된 서브메뉴(currentSub) 값과 DB의 category가 일치하는 것만 가져옴
+      // currentSub가 "공지사항"이면 category가 "공지사항"인 것만 필터링됨
+      query = query.eq('category', currentSub);
+
+      const { data, error } = await query.order('id', { ascending: false });
 
       if (error) {
-        console.error("데이터 로드 실패:", error.message);
+        console.error("로드 실패:", error.message);
       } else {
         setProducts(data || []);
       }
       setLoading(false);
     };
 
-    if (currentCategory === "제품소개") {
-      fetchProducts();
-    }
-  }, [currentSub, currentCategory]);
+    fetchProducts();
+  }, [currentSub]); // currentSub(카테고리)가 바뀔 때마다 실행
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -54,9 +57,7 @@ export default function Home() {
             <h4 className="text-2xl font-semibold text-gray-800">{currentSub}</h4>
             <nav className="text-sm text-gray-400">홈 &gt; {currentCategory} &gt; {currentSub}</nav>
           </div>
-
-          // src/app/page.tsx 내 main 콘텐츠 렌더링 부분 수정
-
+          
           <div className="min-h-[500px]">
             {loading ? (
               <div className="text-center py-20 text-gray-400">데이터를 불러오는 중입니다...</div>
