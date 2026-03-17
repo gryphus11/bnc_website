@@ -34,16 +34,24 @@ export default function AdminDashboard() {
   const handleDelete = async (id: number) => {
     if (!confirm("정말로 삭제하시겠습니까?")) return;
 
-    const { error } = await supabase
-      .from('notices')
-      .delete()
-      .eq('id', id);
+    try {
+      // [수정] await를 사용하여 DB 삭제가 완료될 때까지 기다립니다.
+      const { error } = await supabase
+        .from('notices')
+        .delete()
+        .eq('id', id);
 
-    if (error) {
-      alert("삭제 실패: " + error.message);
-    } else {
-      alert("삭제되었습니다.");
-      setItems(items.filter(item => item.id !== id)); // 목록 새로고침 없이 업데이트
+      if (error) {
+        // 정책(RLS) 문제 등으로 삭제가 거부된 경우 에러 출력
+        alert("삭제 실패: " + error.message);
+        return;
+      }
+
+      // DB 삭제가 성공한 경우에만 화면(State)에서 제거합니다.
+      alert("성공적으로 삭제되었습니다.");
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
+      alert("알 수 없는 에러가 발생했습니다.");
     }
   };
 
@@ -52,7 +60,7 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-6 border-b flex justify-between items-center">
           <h3 className="font-bold text-lg">전체 게시글 목록 ({items.length})</h3>
-          <button 
+          <button
             onClick={() => router.push('/admin/add-product')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
           >
@@ -83,14 +91,20 @@ export default function AdminDashboard() {
                   <td className="p-4 font-medium text-gray-800">{item.title}</td>
                   <td className="p-4 text-sm text-gray-500">{item.date}</td>
                   <td className="p-4 text-center space-x-2">
-                    <button 
+                    <button
                       onClick={() => router.push(`/notice/${item.id}`)}
                       className="text-gray-500 hover:text-blue-600 text-sm"
                     >
                       보기
                     </button>
-                    <button 
-                      onClick={() => handleDelete(item.id)}
+                    <button
+                      onClick={() => router.push(`/admin/edit-product/${item.id}`)} // 수정 페이지 연결
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)} // 기존 삭제 함수
                       className="text-red-500 hover:text-red-700 text-sm font-medium"
                     >
                       삭제
