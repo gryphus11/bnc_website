@@ -65,9 +65,18 @@ export default function HomePage() {
 			{/* 1. 제품소개 카테고리일 때 */}
 			{currentCategory === "제품소개" ? (
 			  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{PRODUCT_LIST.map(product => (
-				  <ProductCard key={product.id} product={product} />
-				))}
+				{PRODUCT_LIST
+				  .filter(product => product.category === currentSub) // 서브 메뉴명이 제품의 카테고리와 일치해야 함
+				  .map(product => (
+					<ProductCard key={product.id} product={product} />
+				  ))
+				}
+				{/* 필터링 결과가 없을 때 안내 문구 */}
+				{PRODUCT_LIST.filter(p => p.category === currentSub).length === 0 && (
+				  <div className="col-span-full py-20 text-center text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed">
+					[{currentSub}] 그룹의 제품 정보를 준비 중입니다.
+				  </div>
+				)}
 			  </div>
 			) : 
 			/* 2. 공지사항이나 자료실 등 게시판 형태일 때 */
