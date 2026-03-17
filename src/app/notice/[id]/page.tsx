@@ -81,6 +81,21 @@ export default function NoticeDetailPage() {
             ))}
           </div>
         )}
+        
+        {/* [이 부분 수정] 이미지 배열이 있을 경우 화면에 순서대로 출력 */}
+        {notice.images && notice.images.length > 0 && (
+          <div className="mt-10 space-y-6">
+            {notice.images.map((imgUrl: string, index: number) => (
+              <div key={index} className="rounded-lg overflow-hidden shadow-md">
+                <img
+                  src={imgUrl}
+                  alt={`첨부 이미지 ${index + 1}`}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 하단 버튼 */}
         <div className="mt-12 flex justify-center">
