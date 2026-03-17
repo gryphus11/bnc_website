@@ -18,7 +18,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      
+
       // 쿼리 시작
       let query = supabase.from('notices').select('*');
 
@@ -57,7 +57,7 @@ export default function Home() {
             <h4 className="text-2xl font-semibold text-gray-800">{currentSub}</h4>
             <nav className="text-sm text-gray-400">홈 &gt; {currentCategory} &gt; {currentSub}</nav>
           </div>
-          
+
           <div className="min-h-[500px]">
             {loading ? (
               <div className="text-center py-20 text-gray-400">데이터를 불러오는 중입니다...</div>
@@ -79,7 +79,7 @@ export default function Home() {
                         <tr
                           key={item.id}
                           className="border-b hover:bg-gray-50 cursor-pointer"
-                          onClick={() => router.push(`/notice/${item.id}`)} // 상세페이지 연결
+                          onClick={() => router.push(`/notice/${item.id}`)}
                         >
                           <td className="p-4 text-gray-500">{products.length - idx}</td>
                           <td className="p-4 font-medium">{item.title}</td>
