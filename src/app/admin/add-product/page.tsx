@@ -9,24 +9,24 @@ export default function AddProductPage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Airfoil Group"); // 기본값 변경
   const [content, setContent] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>([]); // 파일 상태 추가
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) return alert("제목과 내용을 입력해주세요.");
+    if (!title || !content) return alert("제목과 내용을 입력해 주세요.");
     setIsSubmitting(true);
 
     try {
       const imageUrls = [];
 
-      // 1. 이미지 Storage 업로드
+      // 1. Supabase Storage에 이미지 업로드
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
         
-        const { data, error: uploadError } = await supabase.storage
-          .from('board-images') // 생성하신 버킷 이름
+        const { error: uploadError } = await supabase.storage
+          .from('board-images') // 생성한 버킷 이름 확인
           .upload(fileName, file);
 
         if (uploadError) throw uploadError;
@@ -38,14 +38,14 @@ export default function AddProductPage() {
         imageUrls.push(publicUrl);
       }
 
-      // 2. DB 저장
+      // 2. DB에 데이터 삽입 (이미지 URL 배열 포함)
       const { error } = await supabase
         .from('notices')
         .insert([{
           title,
           category,
           content,
-          images: imageUrls, // URL 배열 저장
+          images: imageUrls,
           author: "관리자 Jae Hoon Sim",
           views: 0,
           date: new Date().toISOString().split('T')[0]
@@ -53,8 +53,8 @@ export default function AddProductPage() {
 
       if (error) throw error;
 
-      alert("게시글이 성공적으로 등록되었습니다.");
-      router.push('/'); 
+      alert("성공적으로 저장되었습니다!");
+      router.push('/');
     } catch (err: any) {
       alert("오류 발생: " + err.message);
     } finally {
@@ -64,47 +64,58 @@ export default function AddProductPage() {
 
   return (
     <AdminLayout title="새 게시글 등록">
-      <form onSubmit={handleSubmit} className="max-w-4xl bg-white p-8 rounded-xl shadow-sm space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <input 
-            className="border p-2 rounded" 
-            placeholder="제목" 
-            value={title} 
-            onChange={e => setTitle(e.target.value)} 
+      <div className="max-w-4xl bg-white rounded-xl shadow-sm p-8">
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-6">
+            <input 
+              className="border p-2 rounded" 
+              placeholder="제목" 
+              value={title} 
+              onChange={e => setTitle(e.target.value)} 
+            />
+            <select 
+              className="border p-2 rounded" 
+              value={category} 
+              onChange={e => setCategory(e.target.value)}
+            >
+              <option value="Airfoil Group">Airfoil Group</option>
+              <option value="Multi Blade Group">Multi Blade Group</option>
+              <option value="Axial Group">Axial Group</option>
+              <option value="Industrial Group">Industrial Group</option>
+              <option value="Make Up Air Group">Make Up Air Group</option>
+              <option value="Building Exhaust Group">Building Exhaust Group</option>
+              <option value="주차장 환기 시스템">주차장 환기 시스템</option>
+              <option value="터널환기&제연시스템">터널환기&제연시스템</option>
+              <option value="Intake Air Filter & Silencer">Intake Air Filter & Silencer</option>
+              <option value="공지사항">공지사항</option>
+            </select>
+          </div>
+          <textarea 
+            className="w-full border p-2 rounded h-64" 
+            placeholder="내용" 
+            value={content} 
+            onChange={e => setContent(e.target.value)} 
           />
-          <select 
-            className="border p-2 rounded" 
-            value={category} 
-            onChange={e => setCategory(e.target.value)}
+          {/* 파일 선택 필드 추가 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-bold">이미지 첨부</label>
+            <input 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              onChange={e => setFiles(Array.from(e.target.files || []))} 
+              className="block w-full text-sm text-gray-500"
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold"
           >
-            {/* 개편된 9개 그룹을 옵션으로 제공 */}
-            <option value="Airfoil Group">Airfoil Group</option>
-            <option value="Multi Blade Group">Multi Blade Group</option>
-            <option value="Axial Group">Axial Group</option>
-            <option value="Industrial Group">Industrial Group</option>
-            {/* ... 나머지 그룹 추가 */}
-          </select>
-        </div>
-        <textarea 
-          className="w-full border p-2 rounded h-40" 
-          placeholder="내용" 
-          value={content} 
-          onChange={e => setContent(e.target.value)} 
-        />
-        <input 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          onChange={e => setFiles(Array.from(e.target.files || []))} 
-        />
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold"
-        >
-          {isSubmitting ? "처리 중..." : "게시글 저장하기"}
-        </button>
-      </form>
+            {isSubmitting ? "저장 중..." : "게시글 저장하기"}
+          </button>
+        </form>
+      </div>
     </AdminLayout>
   );
 }
