@@ -25,7 +25,7 @@ export default function NoticeDetailPage() {
     if (params.id) fetchDetail();
   }, [params.id]);
 
-  if (loading) return <div className="p-10 text-center">로딩 중...</div>;
+  if (loading) return <div className="p-10 text-center">데이터를 불러오는 중입니다...</div>;
   if (!notice) return <div className="p-10 text-center">게시글을 찾을 수 없습니다.</div>;
 
   return (
@@ -43,12 +43,12 @@ export default function NoticeDetailPage() {
           </div>
         </div>
 
-        {/* 본문 텍스트 */}
+        {/* 1. 본문 텍스트 */}
         <div className="px-6 mb-10 text-gray-700 leading-relaxed whitespace-pre-wrap">
           {notice.content}
         </div>
 
-        {/* 이미지 리스트: 본문 바로 아래에 출력 */}
+        {/* 2. 이미지 리스트 (본문 바로 아래 배치) */}
         {notice.images && notice.images.length > 0 && (
           <div className="px-6 mb-10 space-y-6">
             {notice.images.map((imgUrl: string, idx: number) => (
@@ -63,7 +63,7 @@ export default function NoticeDetailPage() {
           </div>
         )}
 
-        {/* 영상 (Youtube Embed) */}
+        {/* 3. 영상 (Youtube Embed) */}
         {notice.videoUrl && (
           <div className="px-6 mb-10">
             <div className="aspect-video w-full">
@@ -77,7 +77,7 @@ export default function NoticeDetailPage() {
           </div>
         )}
 
-        {/* 첨부파일 다운로드 섹션 */}
+        {/* 4. 첨부파일 다운로드 섹션 */}
         {notice.attachments && notice.attachments.length > 0 && (
           <div className="mx-6 p-4 bg-gray-100 rounded-lg">
             <h5 className="font-bold text-sm mb-2 italic text-gray-700">첨부파일 다운로드</h5>
