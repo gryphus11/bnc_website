@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
+import RichEditor from '../../components/RichEditor';
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -11,6 +12,13 @@ export default function AddProductPage() {
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]); // 파일들을 담을 상태
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newAttachFiles, setNewAttachFiles] = useState<File[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []); // 선택된 파일들을 배열로 변환
+    setNewAttachFiles(files); // 상태에 저장
+    console.log("선택된 파일들:", files); // 디버깅용
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,22 +99,25 @@ export default function AddProductPage() {
               <option value="공지사항">공지사항</option>
             </select>
           </div>
-          <textarea 
-            className="w-full border p-2 rounded h-64" 
-            placeholder="내용을 입력하세요" 
-            value={content} 
-            onChange={e => setContent(e.target.value)} 
-          />
-          <div className="space-y-2">
-            <label className="block text-sm font-bold">이미지 첨부 (여러 장 가능)</label>
-            <input 
-              type="file" 
-              multiple 
-              accept="image/*" 
-              onChange={e => setFiles(Array.from(e.target.files || []))} 
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
+          
+          <div>
+            <label className="block text-sm font-bold mb-2 text-gray-700">상세 내용 (이미지/영상 포함)</label>
+            <RichEditor value={content} onChange={setContent} />
           </div>
+
+          <div className="p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+            <label className="block text-sm font-bold mb-3 text-gray-700">
+              📎 첨부파일 (PDF, ZIP, 엑셀, 도면 등)
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p className="text-xs text-gray-400 mt-2">* 본문 내용 외에 별도로 제공할 파일을 선택해 주세요.</p>
+          </div>
+
           <button 
             type="submit" 
             disabled={isSubmitting}

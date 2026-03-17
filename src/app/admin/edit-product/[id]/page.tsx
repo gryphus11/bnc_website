@@ -25,6 +25,12 @@ export default function EditProductPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []); // 선택된 파일들을 배열로 변환
+    setNewAttachFiles(files); // 상태에 저장
+    console.log("선택된 파일들:", files); // 디버깅용
+  };
+
   // 1. 기존 데이터 불러오기
   useEffect(() => {
     const fetchDetail = async () => {
@@ -127,31 +133,22 @@ export default function EditProductPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2">내용</label>
-            <textarea className="w-full border p-3 rounded-lg h-64" value={content} onChange={e => setContent(e.target.value)} required />
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-gray-700">내용 수정 (에디터)</label>
+            <RichEditor value={content} onChange={setContent} />
           </div>
 
-          {/* 이미지 수정 섹션 */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-dashed">
-            <label className="block text-sm font-bold mb-2">제품 이미지 (새로 선택 시 기존 이미지 대체)</label>
-            {existingImages.length > 0 && (
-              <div className="flex gap-2 mb-3">
-                {existingImages.map((url, i) => <img key={i} src={url} className="w-20 h-20 object-cover rounded border" />)}
-              </div>
-            )}
-            <input type="file" multiple accept="image/*" onChange={e => setNewImageFiles(Array.from(e.target.files || []))} />
-          </div>
-
-          {/* 유튜브 및 첨부파일 (등록 페이지와 동일하게 추가) */}
-          <div>
-            <label className="block text-sm font-bold mb-2">YouTube 링크</label>
-            <input className="w-full border p-3 rounded-lg" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-2">첨부파일 추가</label>
-            <input type="file" multiple onChange={e => setNewAttachFiles(Array.from(e.target.files || []))} />
+          <div className="p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+            <label className="block text-sm font-bold mb-3 text-gray-700">
+              📎 첨부파일 (PDF, ZIP, 엑셀, 도면 등)
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p className="text-xs text-gray-400 mt-2">* 본문 내용 외에 별도로 제공할 파일을 선택해 주세요.</p>
           </div>
 
           <div className="flex gap-4 pt-6">
