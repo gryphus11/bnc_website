@@ -5,11 +5,11 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
       {/* 제품 이미지 */}
-      <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div className="w-full h-[300px] bg-gray-100 flex items-center justify-center overflow-hidden">
         <img 
           src={product.imageUrl} 
           alt={product.name} 
-          className="group-hover:scale-105 transition-transform duration-300 object-cover w-full h-full"
+          className="group-hover:scale-105 transition-transform duration-300 object-contain w-full h-full"
         />
       </div>
       
