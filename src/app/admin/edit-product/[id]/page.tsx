@@ -4,31 +4,32 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import AdminLayout from '../../../components/admin/AdminLayout';
-import RichEditor from '../../../components/RichEditor';
+import dynamic from 'next/dynamic'; // 추가
+
+// 1. 에디터를 동적으로 로드 (SSR 에러 방지)
+const RichEditor = dynamic(() => import('../../../components/RichEditor'), { 
+  ssr: false,
+  loading: () => <div className="h-[400px] bg-gray-100 animate-pulse rounded-lg" />
+});
 
 export default function EditProductPage() {
   const params = useParams();
   const router = useRouter();
   
-  // 상태 관리 (등록 페이지와 동일하게 구성)
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Airfoil Group");
-  const [author, setAuthor] = useState("관리자");
+  const [author, setAuthor] = useState("관리자 Jae Hoon Sim");
   const [content, setContent] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
   
   // 미디어 관련 상태
-  const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
-  const [existingAttachments, setExistingAttachments] = useState<any[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<string[]>([]);
   const [newAttachFiles, setNewAttachFiles] = useState<File[]>([]);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 파일 선택 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []); // 선택된 파일들을 배열로 변환
-    setNewAttachFiles(files); // 상태에 저장
-    console.log("선택된 파일들:", files); // 디버깅용
+    const files = Array.from(e.target.files || []);
+    setNewAttachFiles(files);
   };
 
   // 1. 기존 데이터 불러오기
@@ -43,47 +44,44 @@ export default function EditProductPage() {
       if (data) {
         setTitle(data.title);
         setCategory(data.category);
-        setAuthor(data.author || "관리자");
+        setAuthor(data.author || "관리자 Jae Hoon Sim");
         setContent(data.content);
-        setVideoUrl(data.videoUrl || "");
-        setExistingImages(data.images || []);
-        setExistingAttachments(data.attachments || []);
+        setExistingAttachments(data.attachments || []); // 기존 첨부파일 URL들
       }
     };
     if (params.id) fetchDetail();
   }, [params.id]);
 
-  // 2. 수정 데이터 저장 (등록 로직과 동일하게 업로드 처리)
+  // 2. 수정 데이터 저장
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title || !content) return alert("제목과 내용을 입력해주세요.");
     setIsSubmitting(true);
 
     try {
-      // 새로운 이미지가 있다면 업로드, 없으면 기존 유지
-      let finalImages = [...existingImages];
-      if (newImageFiles.length > 0) {
-        const uploadedImgUrls = [];
-        for (const file of newImageFiles) {
-          const fileName = `${Date.now()}_${file.name}`;
-          const { error: err } = await supabase.storage.from('board-images').upload(fileName, file);
-          if (err) throw err;
-          const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(fileName);
-          uploadedImgUrls.push(publicUrl);
-        }
-        finalImages = uploadedImgUrls; // 새 이미지로 교체 (또는 추가 로직 가능)
-      }
+      let finalAttachments = [...existingAttachments];
 
-      // 새로운 첨부파일 업로드
-      let finalAttach = [...existingAttachments];
+      // 새로운 첨부파일이 있다면 업로드
       if (newAttachFiles.length > 0) {
-        const uploadedFiles = [];
+        const uploadedUrls = [];
         for (const file of newAttachFiles) {
-          const fileName = `files/${Date.now()}_${file.name}`;
-          await supabase.storage.from('board-images').upload(fileName, file);
-          const { data: { publicUrl } } = supabase.storage.from('board-images').getPublicUrl(fileName);
-          uploadedFiles.push({ name: file.name, url: publicUrl });
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('board-images')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('board-images')
+            .getPublicUrl(fileName);
+          
+          uploadedUrls.push(publicUrl);
         }
-        finalAttach = [...finalAttach, ...uploadedFiles];
+        // 기존 파일 유지 + 새 파일 추가 (또는 새 파일로 교체하려면 finalAttachments = uploadedUrls)
+        finalAttachments = [...finalAttachments, ...uploadedUrls];
       }
 
       // DB 업데이트
@@ -94,9 +92,7 @@ export default function EditProductPage() {
           category,
           author,
           content,
-          videoUrl,
-          images: finalImages,
-          attachments: finalAttach,
+          attachments: finalAttachments,
           date: new Date().toISOString().split('T')[0]
         })
         .eq('id', params.id);
@@ -116,19 +112,33 @@ export default function EditProductPage() {
     <AdminLayout title="게시글 수정">
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border">
         <form onSubmit={handleUpdate} className="space-y-6">
-          {/* 기본 정보 입력 (등록 페이지와 동일 디자인) */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold mb-2">제목</label>
-              <input className="w-full border p-3 rounded-lg" value={title} onChange={e => setTitle(e.target.value)} required />
+              <label className="block text-sm font-bold mb-2 text-gray-700">제목</label>
+              <input 
+                className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                required 
+              />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2">카테고리</label>
-              <select className="w-full border p-3 rounded-lg" value={category} onChange={e => setCategory(e.target.value)}>
+              <label className="block text-sm font-bold mb-2 text-gray-700">카테고리</label>
+              <select 
+                className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                value={category} 
+                onChange={e => setCategory(e.target.value)}
+              >
                 <option value="Airfoil Group">Airfoil Group</option>
                 <option value="Multi Blade Group">Multi Blade Group</option>
+                <option value="Axial Group">Axial Group</option>
+                <option value="Industrial Group">Industrial Group</option>
+                <option value="Make Up Air Group">Make Up Air Group</option>
+                <option value="Building Exhaust Group">Building Exhaust Group</option>
+                <option value="주차장 환기 시스템">주차장 환기 시스템</option>
+                <option value="터널환기&제연시스템">터널환기&제연시스템</option>
+                <option value="Intake Air Filter & Silencer">Intake Air Filter & Silencer</option>
                 <option value="공지사항">공지사항</option>
-                <option value="일반자료실">일반자료실</option>
               </select>
             </div>
           </div>
@@ -140,7 +150,7 @@ export default function EditProductPage() {
 
           <div className="p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
             <label className="block text-sm font-bold mb-3 text-gray-700">
-              📎 첨부파일 (PDF, ZIP, 엑셀, 도면 등)
+              📎 새 첨부파일 추가 (PDF, 도면 등)
             </label>
             <input
               type="file"
@@ -148,12 +158,26 @@ export default function EditProductPage() {
               onChange={handleFileChange}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            <p className="text-xs text-gray-400 mt-2">* 본문 내용 외에 별도로 제공할 파일을 선택해 주세요.</p>
+            {existingAttachments.length > 0 && (
+              <p className="mt-3 text-xs text-gray-500 italic">
+                * 현재 {existingAttachments.length}개의 기존 파일이 등록되어 있습니다.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-4 pt-6">
-            <button type="button" onClick={() => router.back()} className="flex-1 py-4 bg-gray-100 rounded-lg font-bold">취소</button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-blue-600 text-white rounded-lg font-bold">
+            <button 
+              type="button" 
+              onClick={() => router.back()} 
+              className="flex-1 py-4 bg-gray-100 rounded-lg font-bold hover:bg-gray-200 transition"
+            >
+              취소
+            </button>
+            <button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className={`flex-1 py-4 bg-blue-600 text-white rounded-lg font-bold shadow-md transition ${isSubmitting ? 'bg-gray-400' : 'hover:bg-blue-700'}`}
+            >
               {isSubmitting ? "수정 저장 중..." : "수정 완료"}
             </button>
           </div>
