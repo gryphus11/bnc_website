@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+// @ts-ignore
 import { useEditor, EditorContent } from '@tiptap/react';
+
+// @ts-ignore
 import StarterKit from '@tiptap/starter-kit';
+
+// @ts-ignore
 import Link from '@tiptap/extension-link';
+
+// @ts-ignore
 import Image from '@tiptap/extension-image';
 
 // 에디터 스타일을 위한 최소한의 CSS (파일 상단 혹은 전역 CSS에 추가 권장)
